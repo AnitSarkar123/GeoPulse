@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink, MapPin, Calendar, Shield, AlertTriangle, CheckCircle, AlertCircle, Zap } from 'lucide-react';
 import { CATEGORY_COLORS } from '../services/api';
 import { getAuthenticityLabel, getAuthenticityBadgeColor } from '../services/search';
-import TranslateButton from './TranslateButton';
+import BookmarkButton from './BookmarkButton';
 
 export default function IntelPanel({ event, isOpen, onClose, searchResults, onOpenAssistant }) {
   // ── Translation state (declared above any early returns) ──
@@ -163,7 +163,7 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults, onOp
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/50 z-[800]"
+            className="fixed inset-0 bg-black/50 z-[80]"
             data-testid="intel-panel-backdrop"
           />
           
@@ -211,6 +211,7 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults, onOp
                   </h2>
                 </div>
                 <div className="flex items-center gap-2">
+                  <BookmarkButton event={event} showLabel />
                   {onOpenAssistant && (
                     <button
                       onClick={onOpenAssistant}

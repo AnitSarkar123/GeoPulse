@@ -12,16 +12,28 @@ import {
  * onSavedNewsOpen: callback to open the SavedNewsPage panel
  */
 export default function Header({ onSavedNewsOpen }) {
-  const { user, isAuthenticated, login, logout, savedIds } = useAuth();
+  const authCtx = useAuth();
+  const { user, isAuthenticated, login, logout, savedIds } = authCtx || {};
   const [menuOpen, setMenuOpen]       = useState(false);
   const [loggingOut, setLoggingOut]   = useState(false);
 
   const handleLogout = async () => {
     setLoggingOut(true);
-    await logout();
+    if (logout) await logout();
     setLoggingOut(false);
     setMenuOpen(false);
   };
+
+  if (!authCtx) {
+    return (
+      <header className="fixed top-0 left-0 right-0 z-[60] flex items-center justify-between px-4 h-14 bg-[rgba(10,11,14,0.92)] backdrop-blur-2xl border-b border-white/[0.07] shadow-[0_2px_20px_rgba(0,0,0,0.5)]">
+        <div className="flex items-center gap-2.5">
+          <Globe className="w-5 h-5 text-blue-400" />
+          <span className="text-white font-bold text-[15px]">GeoPulse</span>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <>
@@ -61,7 +73,7 @@ export default function Header({ onSavedNewsOpen }) {
             <>
               <button
                 id="header-signin-btn"
-                onClick={login}
+                onClick={login || (() => {})}
                 className="
                   flex items-center gap-1.5
                   px-3.5 py-1.5 rounded-md
@@ -78,7 +90,7 @@ export default function Header({ onSavedNewsOpen }) {
 
               <button
                 id="header-signup-btn"
-                onClick={login}
+                onClick={login || (() => {})}
                 className="
                   flex items-center gap-1.5
                   px-3.5 py-1.5 rounded-md

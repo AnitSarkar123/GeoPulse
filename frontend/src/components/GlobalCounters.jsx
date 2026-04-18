@@ -7,7 +7,7 @@ export default function GlobalCounters({ stats, isConnected }) {
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 md:gap-4 glass-panel rounded-xl px-3 md:px-5 py-2 max-w-[90vw] overflow-x-auto scrollbar-hide"
+      className="fixed top-20 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 md:gap-4 glass-panel rounded-xl px-3 md:px-5 py-2 max-w-[90vw] overflow-x-auto scrollbar-hide"
       data-testid="global-counters"
     >
       {/* Logo/Brand */}
