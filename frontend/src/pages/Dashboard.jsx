@@ -16,6 +16,7 @@ import EventGraph from '../components/EventGraph';
 import SimulationPanel from '../components/SimulationPanel';
 import FinanceCorrelation from '../components/FinanceCorrelation';
 import SearchRejectionModal from '../components/SearchRejectionModal';
+import IntelAssistant from '../components/IntelAssistant';
 import useWebSocket from '../hooks/useWebSocket';
 import { Map, Globe as GlobeIcon, GitBranch, Zap, Clock } from 'lucide-react';
 
@@ -45,6 +46,7 @@ export default function Dashboard() {
   const [isLocationNewsModalOpen, setIsLocationNewsModalOpen] = useState(false);
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
   const [rejectionModal, setRejectionModal] = useState({ isOpen: false, query: '', reason: '', recommendation: '' });
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
   // WebSocket
   const handleNewEvent = useCallback((eventData) => {
@@ -231,6 +233,9 @@ export default function Dashboard() {
       </div>
 
       {/* Modals - Individually wrapped to only block clicks when open */}
+      {isPanelOpen && (
+        <div className="fixed inset-0 z-[100] pointer-events-auto">
+          <IntelPanel event={selectedEvent} isOpen={isPanelOpen} onClose={() => setIsPanelOpen(false)} />
       {/* Regular Event Panel OR Search Results */}
       {(isPanelOpen || searchResults?.success) && (
         <div className="fixed inset-0 z-50 pointer-events-auto">
@@ -242,6 +247,7 @@ export default function Dashboard() {
               setSearchResults(null);
             }}
             searchResults={searchResults}
+            onOpenAssistant={() => setIsAssistantOpen(true)}
           />
         </div>
       )}
@@ -257,7 +263,7 @@ export default function Dashboard() {
       )}
       {isGraphOpen && (
         <div className="fixed inset-0 z-50 pointer-events-auto">
-          <EventGraph isOpen={isGraphOpen} onClose={() => setIsGraphOpen(false)} allEvents={events} />
+          <EventGraph isOpen={isGraphOpen} onClose={() => setIsGraphOpen(false)} allEvents={events} onNodeClick={handleEventClick} />
         </div>
       )}
       {isSimulationOpen && (
@@ -303,6 +309,9 @@ export default function Dashboard() {
 
       {/* AI Chatbot */}
       <ChatBot />
+
+      {/* Intel Assistant */}
+      <IntelAssistant isOpen={isAssistantOpen} onClose={() => setIsAssistantOpen(false)} />
 
       {/* Status Indicator */}
       <div className="fixed bottom-6 right-4 z-40 flex gap-2 pointer-events-auto" data-testid="control-bar">
