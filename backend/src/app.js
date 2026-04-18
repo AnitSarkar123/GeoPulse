@@ -1,21 +1,45 @@
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
-const morgan = require("morgan");
+require("dotenv").config();
+const express      = require("express");
+const cors         = require("cors");
+const helmet       = require("helmet");
+const morgan       = require("morgan");
+const cookieParser = require("cookie-parser");
+const passport     = require("./config/passport");
 
-const logger = require("./utils/logger");
+const logger       = require("./utils/logger");
+const { connectDB } = require("./config/db");
 
 // Routes
-const newsRoutes = require("./routes/news.routes");
-const searchRoutes = require("./routes/search.routes");
+const newsRoutes      = require("./routes/news.routes");
+const searchRoutes    = require("./routes/search.routes");
 const assistantRoutes = require("./routes/assistant.routes");
+const authRoutes      = require("./routes/auth.routes");
+const savedRoutes     = require("./routes/saved.routes");
 
 const app = express();
 
+// ---------- DATABASE ----------
+connectDB();
+
 // ---------- MIDDLEWARE ----------
-app.use(cors());
-app.use(helmet());
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+
+app.use(
+  cors({
+    origin: FRONTEND_URL,
+    credentials: true,
+  })
+);
+
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
+
 app.use(express.json());
+app.use(cookieParser());
+app.use(passport.initialize());
 
 // HTTP request logging → pipe into your logger
 app.use(
@@ -43,6 +67,10 @@ app.get("/api/health", (req, res) => {
 app.use("/api", newsRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/assistant", assistantRoutes);
+
+// Auth & Saved News routes
+app.use("/api/auth", authRoutes);
+app.use("/api/saved", savedRoutes);
 
 // Root route
 app.get("/", (req, res) => {

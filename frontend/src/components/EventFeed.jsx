@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Clock, ChevronDown, ChevronUp, GripHorizontal } from 'lucide-react';
 import { CATEGORY_COLORS } from '../services/api';
+import BookmarkButton from './BookmarkButton';
 
 const formatTime = (dateStr) => {
   try {
@@ -108,8 +109,8 @@ export default function EventFeed({ events, onEventClick, onCountryClick }) {
                     </div>
                   </div>
 
-                  {/* Severity badge */}
-                  <div className="flex-shrink-0">
+                  {/* Severity badge + Bookmark */}
+                  <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
                     <span
                       className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm"
                       style={{
@@ -120,6 +121,9 @@ export default function EventFeed({ events, onEventClick, onCountryClick }) {
                     >
                       {event.severity}
                     </span>
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <BookmarkButton event={event} size="sm" />
+                    </div>
                   </div>
                 </div>
               </motion.div>

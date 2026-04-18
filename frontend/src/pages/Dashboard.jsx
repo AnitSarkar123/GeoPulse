@@ -19,6 +19,8 @@ import SearchRejectionModal from '../components/SearchRejectionModal';
 import IntelAssistant from '../components/IntelAssistant';
 import useWebSocket from '../hooks/useWebSocket';
 import { Map, Globe as GlobeIcon, GitBranch, Zap, Clock } from 'lucide-react';
+import Header from '../components/Header';
+import SavedNewsPage from './SavedNewsPage';
 
 const GlobeView = lazy(() => import('../components/GlobeView'));
 
@@ -47,6 +49,7 @@ export default function Dashboard() {
   const [isTimelineOpen, setIsTimelineOpen] = useState(false);
   const [rejectionModal, setRejectionModal] = useState({ isOpen: false, query: '', reason: '', recommendation: '' });
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+  const [isSavedPanelOpen, setIsSavedPanelOpen] = useState(false);
 
   // WebSocket
   const handleNewEvent = useCallback((eventData) => {
@@ -170,6 +173,13 @@ export default function Dashboard() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden" data-testid="dashboard">
+
+      {/* ── Fixed Header ──────────────────────────────────────── */}
+      <Header onSavedNewsOpen={() => setIsSavedPanelOpen(true)} />
+
+      {/* ── Saved News Side Panel ─────────────────────────────── */}
+      <SavedNewsPage isOpen={isSavedPanelOpen} onClose={() => setIsSavedPanelOpen(false)} />
+
       {/* Map / Globe Layer (Background) */}
       <div className="absolute inset-0 z-0">
         {viewMode === '2d' ? (
@@ -184,18 +194,18 @@ export default function Dashboard() {
       {/* UI Overlay Layer */}
       <div className="absolute inset-0 z-20 pointer-events-none" />
 
-      {/* Top: Global Counters */}
-      <div className="fixed top-4 left-4 z-40 pointer-events-auto">
+      {/* Top: Global Counters — sits below 56px header */}
+      <div className="fixed top-[68px] left-4 z-40 pointer-events-auto">
         <GlobalCounters stats={stats} isConnected={isConnected} />
       </div>
 
       {/* Left: Category Filters */}
-      <div className="fixed left-4 top-24 z-40 pointer-events-auto">
+      <div className="fixed left-4 top-[124px] z-40 pointer-events-auto">
         <CategoryFilters activeCategory={activeCategory} onCategoryChange={setActiveCategory} stats={stats} />
       </div>
 
-      {/* Right Column Controls: Search & Toggles */}
-      <div className="fixed top-4 right-4 z-40 flex flex-col items-end gap-4 pointer-events-auto" data-testid="controls-column">
+      {/* Right Column Controls: Search & Toggles — below header */}
+      <div className="fixed top-[68px] right-4 z-40 flex flex-col items-end gap-4 pointer-events-auto" data-testid="controls-column">
         {/* View Toggle */}
         <div className="flex gap-2 glass-panel rounded-lg p-2 shadow-lg border border-white/10" data-testid="view-toggle" title="Toggle between 2D Map and 3D Globe">
           <button
@@ -223,7 +233,7 @@ export default function Dashboard() {
       </div>
 
       {/* Right: Finance Correlation */}
-      <div className="fixed top-32 right-4 z-40 pointer-events-auto">
+      <div className="fixed top-[184px] right-4 z-40 pointer-events-auto">
         <FinanceCorrelation />
       </div>
 
@@ -233,12 +243,8 @@ export default function Dashboard() {
       </div>
 
       {/* Modals - Individually wrapped to only block clicks when open */}
-      {isPanelOpen && (
-        <div className="fixed inset-0 z-[100] pointer-events-auto">
-          <IntelPanel event={selectedEvent} isOpen={isPanelOpen} onClose={() => setIsPanelOpen(false)} />
-      {/* Regular Event Panel OR Search Results */}
       {(isPanelOpen || searchResults?.success) && (
-        <div className="fixed inset-0 z-50 pointer-events-auto">
+        <div className="fixed inset-0 z-[100] pointer-events-auto">
           <IntelPanel 
             event={selectedEvent} 
             isOpen={isPanelOpen || searchResults?.success} 
