@@ -66,6 +66,7 @@ app.get("/api/health", (req, res) => {
 // Main API
 app.use("/api", newsRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api", translateRoutes);
 app.use("/api/assistant", assistantRoutes);
 
 // Auth & Saved News routes
