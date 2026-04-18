@@ -1,10 +1,10 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, MapPin, Calendar, Shield, AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, ExternalLink, MapPin, Calendar, Shield, AlertTriangle, CheckCircle, AlertCircle, Zap } from 'lucide-react';
 import { CATEGORY_COLORS } from '../services/api';
 import { getAuthenticityLabel, getAuthenticityBadgeColor } from '../services/search';
 
-export default function IntelPanel({ event, isOpen, onClose, searchResults }) {
+export default function IntelPanel({ event, isOpen, onClose, searchResults, onOpenAssistant }) {
   // Handle search results display
   if (searchResults && searchResults.success && searchResults.results && searchResults.results.length > 0) {
     return (
@@ -40,13 +40,24 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults }) {
                       {searchResults.query && `Query: "${searchResults.query}"`}
                     </p>
                   </div>
-                  <button
-                    onClick={onClose}
-                    className="p-2 hover:bg-[var(--bg-elevated)] rounded-lg transition-colors"
-                    data-testid="intel-panel-close"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {onOpenAssistant && (
+                      <button
+                        onClick={onOpenAssistant}
+                        className="p-2 hover:bg-[var(--bg-elevated)] rounded-lg transition-colors"
+                        title="Ask AI Assistant"
+                      >
+                        <Zap className="w-5 h-5 text-yellow-400" />
+                      </button>
+                    )}
+                    <button
+                      onClick={onClose}
+                      className="p-2 hover:bg-[var(--bg-elevated)] rounded-lg transition-colors"
+                      data-testid="intel-panel-close"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Relevance Message */}
@@ -188,13 +199,24 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults }) {
                     {event.title}
                   </h2>
                 </div>
-                <button
-                  onClick={onClose}
-                  className="glass-light p-2 rounded-md hover:bg-[var(--bg-elevated)] transition-colors"
-                  data-testid="intel-panel-close-btn"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {onOpenAssistant && (
+                    <button
+                      onClick={onOpenAssistant}
+                      className="glass-light p-2 rounded-md hover:bg-[var(--bg-elevated)] transition-colors"
+                      title="Ask AI Assistant about this event"
+                    >
+                      <Zap className="w-5 h-5 text-yellow-400" />
+                    </button>
+                  )}
+                  <button
+                    onClick={onClose}
+                    className="glass-light p-2 rounded-md hover:bg-[var(--bg-elevated)] transition-colors"
+                    data-testid="intel-panel-close-btn"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Metadata */}
