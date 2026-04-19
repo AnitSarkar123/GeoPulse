@@ -18,6 +18,8 @@ const savedRoutes     = require("./routes/saved.routes");
 const translateRoutes = require("./routes/translate.routes");
 const summarizeRoutes = require("./routes/summarize.routes");
 const financeRoutes   = require("./routes/finance.routes");
+const narrativeRoutes = require("./routes/narrative.routes");
+const perspectiveRoutes = require("./routes/perspective.routes");
 
 const app = express();
 
@@ -72,6 +74,8 @@ app.use("/api/search", searchRoutes);
 app.use("/api/translate", translateRoutes);
 app.use("/api/summarize", summarizeRoutes);
 app.use("/api/finance", financeRoutes);
+app.use("/api/narrative", narrativeRoutes);
+app.use("/api/perspectives", perspectiveRoutes);
 app.use("/api/assistant", assistantRoutes);
 
 // Auth & Saved News routes

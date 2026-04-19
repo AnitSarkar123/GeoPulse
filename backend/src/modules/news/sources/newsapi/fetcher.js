@@ -20,7 +20,7 @@ const getDateRanges = () => {
 	const today = new Date();
 
 	// Fetch news from last 4 days, 2 days per query for faster LLM processing
-	for (let i = 0; i < 6; i++) {
+	for (let i = 0; i < 7; i++) {
 		const endDate = new Date(today);
 		endDate.setDate(endDate.getDate() - i);
 

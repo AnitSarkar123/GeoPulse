@@ -228,7 +228,7 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* Search */}
+        {/* Search Bar */}
         <SearchBar onSearch={setSearchQuery} onSearchResults={handleSearchResults} />
       </div>
 

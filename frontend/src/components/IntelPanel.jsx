@@ -5,6 +5,7 @@ import { CATEGORY_COLORS } from '../services/api';
 import { getAuthenticityLabel, getAuthenticityBadgeColor } from '../services/search';
 import BookmarkButton from './BookmarkButton';
 import TranslateButton from './TranslateButton';
+import PerspectiveFilterButton from './PerspectiveFilterButton';
 
 export default function IntelPanel({ event, isOpen, onClose, searchResults, onOpenAssistant }) {
   // ── Translation state (declared above any early returns) ──
@@ -72,7 +73,7 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults, onOp
             >
               <div className="p-6 space-y-6">
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-4">
                   <div>
                     <h2 className="text-lg font-bold text-[var(--text-primary)]">Search Results</h2>
                     <p className="text-xs text-[var(--text-secondary)] mt-1">
@@ -80,6 +81,7 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults, onOp
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    <PerspectiveFilterButton searchResults={searchResults} />
                     {onOpenAssistant && (
                       <button
                         onClick={onOpenAssistant}
