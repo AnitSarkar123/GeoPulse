@@ -7,13 +7,12 @@ const logger = require("../utils/logger");
  *
  * Body: { texts: string[], to: string, from?: string }
  *
- * Proxies the Microsoft Translator API (RapidAPI) so the API key
- * stays server-side. Batches texts using the "|" separator and
- * the /largetranslate endpoint.
+ * Uses MyMemory API (free, no auth needed)
+ * Translates each text individually
  *
  * Returns: { success: true, translations: string[] }
  */
-router.post("/translate", async (req, res) => {
+router.post("/", async (req, res) => {
 	const { texts, to, from = "en" } = req.body;
 
 	// ── Validation ──────────────────────────────────────────
@@ -30,91 +29,51 @@ router.post("/translate", async (req, res) => {
 		});
 	}
 
-	const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
-	const MS_TRANSLATOR_HOST = "microsoft-translator-text-api3.p.rapidapi.com";
-
-	if (!RAPIDAPI_KEY) {
-		logger.error("RAPIDAPI_KEY not configured", "translate");
-		return res.status(500).json({
-			success: false,
-			error: "Translation service not configured",
-		});
-	}
-
 	try {
 		logger.info(
-			`Translating ${texts.length} text(s) → ${to}`,
+			`Translating ${texts.length} text(s) via MyMemory → ${to}`,
 			"translate",
 		);
 
-		// Microsoft Translator: join texts with " | " separator
-		// The API splits on " | " and returns results in the same order
-		const joined = texts.join(" | ");
+		const translations = [];
 
-		const url = new URL(
-			`https://${MS_TRANSLATOR_HOST}/largetranslate`,
-		);
-		url.searchParams.set("to", to);
-		url.searchParams.set("from", from);
+		// Translate each text individually using MyMemory API
+		for (const text of texts) {
+			try {
+				// Encode the text for URL
+				const encodedText = encodeURIComponent(text);
+				const url = `https://api.mymemory.translated.net/get?q=${encodedText}&langpair=${from}|${to}`;
 
-		const response = await fetch(url.toString(), {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				"x-rapidapi-host": MS_TRANSLATOR_HOST,
-				"x-rapidapi-key": RAPIDAPI_KEY,
-			},
-			body: JSON.stringify({
-				sep: "|",
-				text: joined,
-			}),
-		});
+				const response = await fetch(url, {
+					method: "GET",
+					headers: {
+						"User-Agent": "World-Monitor/1.0",
+					},
+				});
 
-		if (!response.ok) {
-			const errorText = await response.text();
-			logger.error(
-				`Microsoft Translator error ${response.status}: ${errorText}`,
-				"translate",
-			);
-			return res.status(502).json({
-				success: false,
-				error: "Translation API returned an error",
-			});
+				if (!response.ok) {
+					logger.warn(`MyMemory returned ${response.status}`, "translate");
+					translations.push(text);
+					continue;
+				}
+
+				const data = await response.json();
+
+				// MyMemory returns: { responseData: { translatedText: "..." }, responseStatus: 200 }
+				if (data.responseStatus === 200 && data.responseData?.translatedText) {
+					translations.push(data.responseData.translatedText);
+				} else {
+					logger.warn(
+						`MyMemory error or no translation: ${JSON.stringify(data)}`,
+						"translate",
+					);
+					translations.push(text);
+				}
+			} catch (textError) {
+				logger.warn(`Error translating text: ${textError.message}`, "translate");
+				translations.push(text);
+			}
 		}
-
-		const data = await response.json();
-
-		// Microsoft largetranslate returns:
-		// { translation: "translated text | another | ..." }
-		// or may be a plain string
-		let translatedText = "";
-		if (typeof data?.translation === "string") {
-			translatedText = data.translation;
-		} else if (typeof data === "string") {
-			translatedText = data;
-		} else if (Array.isArray(data) && data[0]?.translations?.[0]?.text) {
-			// Standard MS Translator array format fallback
-			translatedText = data.map((d) => d.translations[0].text).join(" | ");
-		} else {
-			// Last-resort: stringify and return originals
-			logger.warn(
-				`Unexpected MS Translator response shape: ${JSON.stringify(data)}`,
-				"translate",
-			);
-			return res.json({ success: true, translations: texts });
-		}
-
-		// Split back on the separator (trim each segment)
-		const segments = translatedText
-			.split("|")
-			.map((s) => s.trim());
-
-		// Pad to match input length if the API collapsed duplicates
-		while (segments.length < texts.length) {
-			segments.push(texts[segments.length]);
-		}
-		// Trim to input length in case extra splits occurred
-		const translations = segments.slice(0, texts.length);
 
 		logger.info(
 			`Translation complete (${translations.length} segments)`,

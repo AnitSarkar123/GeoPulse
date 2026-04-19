@@ -251,6 +251,7 @@ exports.searchNews = async (query) => {
         success: false,
         query: query,
         message: relevanceCheck.reason || "Not relevant to our perspective",
+        reason: relevanceCheck.reason || "This query does not match geopolitical event types in our database.",
         recommendation: "Try searching for geopolitical conflicts, diplomacy, sanctions, economic news, or humanitarian issues",
         results: [],
       };
@@ -268,6 +269,8 @@ exports.searchNews = async (query) => {
         success: false,
         query: query,
         message: "No articles found for this search",
+        reason: `Your search for "${query}" matched our filters, but we couldn't find any recent articles about this topic in our news sources.`,
+        recommendation: "Try different keywords or search for similar topics like 'Ukraine conflict', 'Middle East tensions', or 'international diplomacy'",
         results: [],
       };
     }

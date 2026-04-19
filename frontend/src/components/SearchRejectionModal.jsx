@@ -55,8 +55,8 @@ export default function SearchRejectionModal({ isOpen, onClose, query, reason, r
                 <label className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">
                   Reason
                 </label>
-                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <p className="text-sm text-red-300 leading-relaxed">
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg max-h-32 overflow-y-auto">
+                  <p className="text-sm text-red-300 leading-relaxed whitespace-pre-wrap break-words">
                     {reason}
                   </p>
                 </div>

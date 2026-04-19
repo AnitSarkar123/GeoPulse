@@ -4,6 +4,7 @@ import { X, ExternalLink, MapPin, Calendar, Shield, AlertTriangle, CheckCircle, 
 import { CATEGORY_COLORS } from '../services/api';
 import { getAuthenticityLabel, getAuthenticityBadgeColor } from '../services/search';
 import BookmarkButton from './BookmarkButton';
+import TranslateButton from './TranslateButton';
 
 export default function IntelPanel({ event, isOpen, onClose, searchResults, onOpenAssistant }) {
   // ── Translation state (declared above any early returns) ──
