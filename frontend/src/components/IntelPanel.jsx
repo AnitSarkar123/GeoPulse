@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, MapPin, Calendar, Shield, AlertTriangle, CheckCircle, AlertCircle, Zap } from 'lucide-react';
+import { X, ExternalLink, MapPin, Calendar, Shield, AlertTriangle, CheckCircle, AlertCircle, Zap, FileText } from 'lucide-react';
 import { CATEGORY_COLORS } from '../services/api';
 import { getAuthenticityLabel, getAuthenticityBadgeColor } from '../services/search';
 import BookmarkButton from './BookmarkButton';
@@ -9,6 +9,8 @@ import TranslateButton from './TranslateButton';
 export default function IntelPanel({ event, isOpen, onClose, searchResults, onOpenAssistant }) {
   // ── Translation state (declared above any early returns) ──
   const [translatedFields, setTranslatedFields] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
 
   const handleTranslated = useCallback((translated) => {
     setTranslatedFields(translated);
@@ -16,6 +18,31 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults, onOp
 
   const handleShowOriginal = useCallback(() => {
     setTranslatedFields(null);
+  }, []);
+
+  const generateSummary = useCallback(async (article) => {
+    setIsSummaryLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/summarize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: article.title,
+          description: article.description,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to generate summary');
+      const data = await response.json();
+      setSummary(data.summary);
+    } catch (err) {
+      console.error('Summary error:', err);
+      setSummary('Could not generate summary. Please try again.');
+    } finally {
+      setIsSummaryLoading(false);
+    }
   }, []);
   // Handle search results display
   if (searchResults && searchResults.success && searchResults.results && searchResults.results.length > 0) {
@@ -127,16 +154,43 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults, onOp
                         )}
                       </div>
 
-                      {/* Read More Button */}
-                      {article.url && (
-                        <a
-                          href={article.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-3 flex-wrap pt-2 border-t border-white/10">
+                        {article.url && (
+                          <a
+                            href={article.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                          >
+                            Read Full Article <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                        <button
+                          onClick={() => generateSummary(article)}
+                          disabled={isSummaryLoading}
+                          className="inline-flex items-center gap-2 text-xs text-purple-400 hover:text-purple-300 transition-colors disabled:opacity-50"
                         >
-                          Read Full Article <ExternalLink className="w-3 h-3" />
-                        </a>
+                          <FileText className="w-3 h-3" />
+                          {isSummaryLoading ? 'Generating...' : 'Get Summary'}
+                        </button>
+                      </div>
+
+                      {/* Summary Display */}
+                      {summary && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="mt-3 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg"
+                        >
+                          <p className="text-xs text-purple-300 leading-relaxed whitespace-pre-wrap break-words">{summary}</p>
+                          <button
+                            onClick={() => setSummary(null)}
+                            className="text-xs text-purple-400 hover:text-purple-300 mt-2 underline"
+                          >
+                            Dismiss
+                          </button>
+                        </motion.div>
                       )}
                     </motion.div>
                   ))}
@@ -290,14 +344,41 @@ export default function IntelPanel({ event, isOpen, onClose, searchResults, onOp
                 </p>
               </div>
 
-              {/* Translate Button */}
-              <div className="pt-1">
-                <TranslateButton
-                  texts={{ title: event.title, description: event.description }}
-                  onTranslated={handleTranslated}
-                  onShowOriginal={handleShowOriginal}
-                />
+              {/* Translate Button & Summary Button */}
+              <div className="pt-1 flex items-center gap-3">
+                <div className="flex-1">
+                  <TranslateButton
+                    texts={{ title: event.title, description: event.description }}
+                    onTranslated={handleTranslated}
+                    onShowOriginal={handleShowOriginal}
+                  />
+                </div>
+                <button
+                  onClick={() => generateSummary(event)}
+                  disabled={isSummaryLoading}
+                  className="inline-flex items-center gap-2 text-xs text-purple-400 hover:text-purple-300 transition-colors disabled:opacity-50"
+                >
+                  <FileText className="w-3 h-3" />
+                  {isSummaryLoading ? 'Generating...' : 'Get Summary'}
+                </button>
               </div>
+
+              {/* Summary Display */}
+              {summary && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="mt-3 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg"
+                >
+                  <p className="text-xs text-purple-300 leading-relaxed whitespace-pre-wrap break-words">{summary}</p>
+                  <button
+                    onClick={() => setSummary(null)}
+                    className="text-xs text-purple-400 hover:text-purple-300 mt-2 underline"
+                  >
+                    Dismiss
+                  </button>
+                </motion.div>
+              )}
 
               {/* Sources */}
               {event.sources && event.sources.length > 0 && (
