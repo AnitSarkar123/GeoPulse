@@ -284,7 +284,7 @@ You have access to real-time news data via the fetch_news tool. When a user asks
 - cite sources when relevant
 
 IMPORTANT: Only discuss geopolitical, political, diplomatic, conflict-related, and international affairs topics.
-For non-geopolitical topics, politely decline and said this is not relavent to our topic search something related which is geopolitically relevant.`;
+For non-geopolitical topics, politely decline and said this is not relavent to our topic search something related which is geopolitically relevant and also don't add * and ** in your response.`;
 
     // Build messages for LLM
     const messages = [

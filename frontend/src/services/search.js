@@ -1,32 +1,43 @@
 /**
  * Search Service - Frontend API calls for news search
  */
+import axios from 'axios';
 
 export async function searchNews(query) {
   try {
     console.log('[Search Service] Searching for:', query);
     
-    const response = await fetch('http://localhost:5000/api/search', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query }),
-    });
+    const response = await axios.post('http://localhost:5000/api/search', 
+      { query },
+      {
+        timeout: 30000,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    );
 
-    if (!response.ok) {
-      throw new Error(`Search failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log('[Search Service] Results:', data);
-    return data;
+    console.log('[Search Service] Response status:', response.status);
+    console.log('[Search Service] Response data:', response.data);
+    
+    // Return the response data directly
+    return response.data;
+    
   } catch (error) {
     console.error('[Search Service] Error:', error);
+    
+    // If we have response data even in error, return it
+    if (error.response && error.response.data) {
+      console.log('[Search Service] Returning error response data:', error.response.data);
+      return error.response.data;
+    }
+    
+    // Otherwise return generic error
     return {
       success: false,
       message: 'Search failed',
-      error: error.message,
+      reason: error.message || 'Network error occurred',
+      query,
       results: [],
     };
   }

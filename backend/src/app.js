@@ -17,6 +17,7 @@ const authRoutes      = require("./routes/auth.routes");
 const savedRoutes     = require("./routes/saved.routes");
 const translateRoutes = require("./routes/translate.routes");
 const summarizeRoutes = require("./routes/summarize.routes");
+const financeRoutes   = require("./routes/finance.routes");
 
 const app = express();
 
@@ -70,6 +71,7 @@ app.use("/api", newsRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/translate", translateRoutes);
 app.use("/api/summarize", summarizeRoutes);
+app.use("/api/finance", financeRoutes);
 app.use("/api/assistant", assistantRoutes);
 
 // Auth & Saved News routes

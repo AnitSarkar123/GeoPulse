@@ -183,7 +183,7 @@ const checkRelevance = async (query, articles) => {
         logger.warn(`Query contains blacklisted topic "${blacklistedTopic}": ${query}`, "search.service");
         return {
           is_relevant: false,
-          reason: `Query contains blacklisted topic: "${blacklistedTopic}"`,
+          reason: `This query is about ${blacklistedTopic}, which is not related to geopolitical events.`,
           matched_type: null,
         };
       }
@@ -206,6 +206,7 @@ const checkRelevance = async (query, articles) => {
 You are a geopolitical intelligence analyst. Check if this search query is relevant to geopolitical events.
 
 Query: "${query}"
+if the qurey has any spelling mistakes then please correct it and then check the relevance of the query like anyone can write Donald Trump as dronal tramp and also someone say narendra modi as modi
 
 Allowed geopolitical event types:
 ${ALLOWED_TYPES.join(", ")}
@@ -214,10 +215,43 @@ Return YES or NO and state which allowed type it matches, if any.
 Format: YES - [type] or NO - [reason]
 `;
 
-    const response = await queryLLM(prompt);
+    logger.info(`Sending LLM prompt for relevance check...`, "search.service");
+    let response;
+    try {
+      response = await queryLLM(prompt);
+      logger.info(`LLM response received: "${response}"`, "search.service");
+    } catch (llmErr) {
+      logger.error(`LLM call failed: ${llmErr.message}`, "search.service");
+      // If LLM fails, use fallback: reject queries that don't match common keywords
+      const hasCommonKeywords = ALLOWED_TYPES.some(type => lowerQuery.includes(type.toLowerCase()));
+      if (hasCommonKeywords) {
+        return {
+          is_relevant: true,
+          reason: "Matched by keyword",
+          matched_type: ALLOWED_TYPES.find(type => lowerQuery.includes(type.toLowerCase())),
+        };
+      }
+      return {
+        is_relevant: false,
+        reason: "This query does not appear to be about geopolitical topics. Try searching for conflicts, diplomacy, sanctions, or world events.",
+        matched_type: null,
+      };
+    }
     
-    if (response.toUpperCase().includes("YES")) {
+    if (!response) {
+      logger.warn(`Empty LLM response for query: "${query}"`, "search.service");
+      return {
+        is_relevant: false,
+        reason: "Unable to verify query relevance. Please try with different keywords.",
+        matched_type: null,
+      };
+    }
+
+    const responseUpper = response.toUpperCase();
+    
+    if (responseUpper.includes("YES")) {
       const typeMatch = ALLOWED_TYPES.find(type => response.toLowerCase().includes(type.toLowerCase()));
+      logger.info(`Query approved by LLM as: ${typeMatch || 'general'}`, "search.service");
       return {
         is_relevant: true,
         reason: "Verified by LLM",
@@ -225,15 +259,31 @@ Format: YES - [type] or NO - [reason]
       };
     }
 
-    // Default fallback: reject if no clear match
+    // Extract reason from "NO - [reason]" format
+    let extractedReason = "This query does not match any geopolitical event types we track.";
+    const noMatch = response.match(/NO\s*-\s*(.+?)(?:\n|$)/i);
+    if (noMatch && noMatch[1]) {
+      extractedReason = noMatch[1].trim();
+      // Remove quotes if they wrap the entire reason
+      extractedReason = extractedReason.replace(/^["']|["']$/g, '');
+      logger.info(`Extracted LLM rejection reason: "${extractedReason}"`, "search.service");
+    } else {
+      logger.info(`Could not extract reason from response. Full response: "${response}"`, "search.service");
+    }
+
     return {
       is_relevant: false,
-      reason: "Query does not match any geopolitical event types",
+      reason: extractedReason,
       matched_type: null,
     };
   } catch (err) {
     logger.error(`Relevance check failed: ${err.message}`, "search.service");
-    return { is_relevant: false, reason: "Error checking relevance", matched_type: null };
+    logger.error(`Error stack: ${err.stack}`, "search.service");
+    return { 
+      is_relevant: false, 
+      reason: `Error verifying query: ${err.message}`, 
+      matched_type: null 
+    };
   }
 };
 
@@ -247,7 +297,7 @@ exports.searchNews = async (query) => {
     
     if (!relevanceCheck.is_relevant) {
       logger.warn(`Search query rejected: ${query}`, "search.service");
-      return {
+      const rejectionResponse = {
         success: false,
         query: query,
         message: relevanceCheck.reason || "Not relevant to our perspective",
@@ -255,12 +305,32 @@ exports.searchNews = async (query) => {
         recommendation: "Try searching for geopolitical conflicts, diplomacy, sanctions, economic news, or humanitarian issues",
         results: [],
       };
+      logger.info(`Rejection response: ${JSON.stringify(rejectionResponse, null, 2)}`, "search.service");
+      return rejectionResponse;
     }
 
     logger.info(`Query "${query}" passed relevance. Fetching articles from NewsAPI...`, "search.service");
 
     // Fetch news with search query
-    const articles = await newsApiFetcher.fetchNewsWithSearch(query);
+    let articles = [];
+    try {
+      articles = await newsApiFetcher.fetchNewsWithSearch(query);
+    } catch (newsErr) {
+      logger.warn(`NewsAPI error: ${newsErr.message}`, "search.service");
+      // Don't fail - return no results message
+      return {
+        success: false,
+        query: query,
+        message: "No articles found",
+        reason: `We couldn't find any recent articles about "${query}" in our news sources. This might be because:
+• The topic is too recent and not yet covered by major news outlets
+• The keywords need to be more specific
+• It's a less-covered geopolitical event`,
+        recommendation: "Try searching with different keywords or wait for more coverage on this topic",
+        results: [],
+      };
+    }
+
     logger.info(`NewsAPI returned ${articles?.length || 0} articles for "${query}"`, "search.service");
     
     if (!articles || articles.length === 0) {
@@ -268,7 +338,7 @@ exports.searchNews = async (query) => {
       return {
         success: false,
         query: query,
-        message: "No articles found for this search",
+        message: "No articles found",
         reason: `Your search for "${query}" matched our filters, but we couldn't find any recent articles about this topic in our news sources.`,
         recommendation: "Try different keywords or search for similar topics like 'Ukraine conflict', 'Middle East tensions', or 'international diplomacy'",
         results: [],
@@ -297,20 +367,39 @@ exports.searchNews = async (query) => {
 
     logger.info(`Search returned ${results.length} articles`, "search.service");
 
-    return {
+    const response = {
       success: true,
       message: `Found ${results.length} relevant articles`,
       query: query,
       matched_type: relevanceCheck.matched_type,
       results: results.slice(0, 10), // Limit to 10 results
     };
+    
+    logger.info(`Final search response: ${JSON.stringify(response, null, 2)}`, "search.service");
+    return response;
   } catch (err) {
     logger.error(`Search service error for query "${query}": ${err.message}`, "search.service");
+    logger.error(`Error stack: ${err.stack}`, "search.service");
+    
+    // Provide specific error reasons instead of generic "Search failed"
+    let errorReason = "An error occurred while processing your search. Please try again.";
+    
+    if (err.message.includes("API") || err.message.includes("api")) {
+      errorReason = "The LLM service is temporarily unavailable. Please try again in a moment.";
+    } else if (err.message.includes("rate") || err.message.includes("429")) {
+      errorReason = "Too many requests. Please wait a moment before searching again.";
+    } else if (err.message.includes("key") || err.message.includes("auth")) {
+      errorReason = "Service authentication failed. Please contact support.";
+    } else {
+      errorReason = `Error: ${err.message}`;
+    }
+    
     return {
       success: false,
       query: query,
-      message: "Search failed",
-      error: err.message,
+      message: "Search error",
+      reason: errorReason,
+      recommendation: "Try searching with simpler keywords or try again later",
       results: [],
     };
   }

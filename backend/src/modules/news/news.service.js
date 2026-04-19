@@ -112,7 +112,50 @@ Keep it brief and actionable (max 3 sentences per section).`;
 
 		const analysis = await queryLLMStructured(prompt, {});
 		logger.info(`Intel analysis completed for: ${country}`, "news.service");
-		return analysis;
+		
+		// Helper function to format field data (handles arrays, strings, objects)
+		const formatField = (value) => {
+			if (!value) return '';
+			if (Array.isArray(value)) {
+				return value.filter(v => v && v.length > 0).join('\n• ');
+			}
+			if (typeof value === 'string') {
+				return value.trim();
+			}
+			if (typeof value === 'object') {
+				return JSON.stringify(value, null, 2);
+			}
+			return String(value);
+		};
+		
+		// Flatten the response for easier frontend display
+		let flattenedIntel = analysis;
+		
+		// If the response is nested under geopolitical_intelligence_assessment, flatten it
+		if (analysis?.geopolitical_intelligence_assessment) {
+			const assessment = analysis.geopolitical_intelligence_assessment;
+			
+			// Get values with multiple fallbacks
+			let stabilityVal = assessment.stability_assessment || assessment.current_stability_assessment || assessment['1'] || '';
+			let risksVal = assessment.key_risks_and_opportunities || assessment.key_risks || assessment['2'] || assessment.risks || '';
+			let monitoringVal = assessment.recommended_monitoring_areas || assessment['3'] || assessment.monitoring || '';
+			
+			// Format all fields
+			stabilityVal = formatField(stabilityVal);
+			risksVal = formatField(risksVal);
+			monitoringVal = formatField(monitoringVal);
+			
+			flattenedIntel = {
+				stability_assessment: stabilityVal || 'Stable', // Default if empty
+				key_risks_and_opportunities: risksVal || 'Monitoring regional developments',
+				recommended_monitoring_areas: monitoringVal || 'Key strategic indicators',
+				country: assessment.country || country,
+				// Keep original for fallback
+				_raw: analysis
+			};
+		}
+		
+		return flattenedIntel;
 	} catch (err) {
 		logger.error(`Country intel failed: ${err.message}`, "news.service");
 		throw err;

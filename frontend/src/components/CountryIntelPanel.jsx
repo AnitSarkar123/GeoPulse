@@ -89,13 +89,33 @@ export default function CountryIntelPanel({ country, isOpen, onClose, allEvents 
         })
         .catch(err => {
           console.warn('Failed to fetch AI intel:', err);
-          setIntelError(err.message);
+          setIntelError(err.message || 'Failed to analyze country intelligence');
         })
         .finally(() => {
           setLoadingIntel(false);
         });
     }
   }, [isOpen, country]);
+
+  const retryFetchIntel = () => {
+    if (countryName) {
+      setLoadingIntel(true);
+      setIntelError(null);
+      setAiIntel(null);
+
+      getCountryIntel(countryName)
+        .then(data => {
+          setAiIntel(data.intel);
+        })
+        .catch(err => {
+          console.warn('Failed to fetch AI intel (retry):', err);
+          setIntelError(err.message || 'Failed to analyze country intelligence');
+        })
+        .finally(() => {
+          setLoadingIntel(false);
+        });
+    }
+  };
 
   // Compute country intelligence from the already-fetched events
   const data = useMemo(() => {
@@ -218,21 +238,132 @@ export default function CountryIntelPanel({ country, isOpen, onClose, allEvents 
                       <Loader2 className="w-4 h-4 animate-spin text-[var(--cat-economic)]" />
                       <span className="text-xs text-[var(--text-secondary)]">Analyzing intelligence...</span>
                     </motion.div>
+                  ) : intelError ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="glass-light rounded-lg p-4 border border-red-500/20 bg-red-500/5"
+                    >
+                      <div className="flex items-center gap-2 mb-3">
+                        <AlertTriangle className="w-3 h-3 text-red-400" />
+                        <span className="text-[10px] uppercase tracking-[0.2em] font-mono text-red-400">Analysis Failed</span>
+                      </div>
+                      <p className="text-xs text-red-300 mb-3">{intelError}</p>
+                      <button
+                        onClick={retryFetchIntel}
+                        disabled={loadingIntel}
+                        className="w-full text-xs py-1.5 px-2 rounded bg-red-500/20 hover:bg-red-500/30 text-red-300 transition-colors disabled:opacity-50 font-mono"
+                      >
+                        {loadingIntel ? 'Retrying...' : 'Retry Analysis'}
+                      </button>
+                    </motion.div>
                   ) : aiIntel ? (
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="glass-light rounded-lg p-4 border border-[var(--cat-economic)]/20"
+                      transition={{ duration: 0.4 }}
+                      className="space-y-3"
                     >
-                      <div className="flex items-center gap-2 mb-3">
-                        <Brain className="w-3 h-3 text-[var(--cat-economic)]" />
-                        <span className="text-[10px] uppercase tracking-[0.2em] font-mono text-[var(--cat-economic)]">AI Assessment</span>
-                      </div>
-                      <div className="text-xs text-[var(--text-primary)] leading-relaxed space-y-2">
-                        {typeof aiIntel === 'string' && <p>{aiIntel}</p>}
-                        {typeof aiIntel === 'object' && aiIntel?.summary && <p>{aiIntel.summary}</p>}
-                        {typeof aiIntel === 'object' && aiIntel?.analysis && <p>{aiIntel.analysis}</p>}
-                      </div>
+                      {/* Stability Assessment */}
+                      {aiIntel.stability_assessment && (
+                        <motion.div
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.5, delay: 0.1 }}
+                          className="glass-light rounded-lg p-4 border border-[var(--cat-economic)]/20 hover:border-[var(--cat-economic)]/40 transition-colors"
+                        >
+                          <div className="flex items-center gap-2 mb-3">
+                            <Shield className="w-3 h-3 text-[var(--cat-economic)] animate-pulse" />
+                            <span className="text-[10px] uppercase tracking-[0.2em] font-mono text-[var(--cat-economic)] font-semibold">Stability Assessment</span>
+                          </div>
+                          <motion.p 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.6, delay: 0.2 }}
+                            className="text-xs text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap"
+                          >
+                            {aiIntel.stability_assessment}
+                          </motion.p>
+                        </motion.div>
+                      )}
+
+                      {/* Key Risks & Opportunities */}
+                      {aiIntel.key_risks_and_opportunities && (
+                        <motion.div
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.5, delay: 0.2 }}
+                          className="glass-light rounded-lg p-4 border border-[var(--cat-conflict)]/20 hover:border-[var(--cat-conflict)]/40 transition-colors"
+                        >
+                          <div className="flex items-center gap-2 mb-3">
+                            <AlertTriangle className="w-3 h-3 text-[var(--cat-conflict)] animate-pulse" />
+                            <span className="text-[10px] uppercase tracking-[0.2em] font-mono text-[var(--cat-conflict)] font-semibold">Risks & Opportunities</span>
+                          </div>
+                          <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.6, delay: 0.3 }}
+                          >
+                            {typeof aiIntel.key_risks_and_opportunities === 'string' ? (
+                              aiIntel.key_risks_and_opportunities.split('\n• ').map((item, idx) => (
+                                <motion.div
+                                  key={idx}
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ duration: 0.3, delay: 0.3 + idx * 0.1 }}
+                                  className="text-xs text-[var(--text-primary)] leading-relaxed mb-2 flex gap-2"
+                                >
+                                  <span className="text-[var(--cat-conflict)] font-mono">•</span>
+                                  <span>{item.trim()}</span>
+                                </motion.div>
+                              ))
+                            ) : (
+                              <p className="text-xs text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap">
+                                {String(aiIntel.key_risks_and_opportunities)}
+                              </p>
+                            )}
+                          </motion.div>
+                        </motion.div>
+                      )}
+
+                      {/* Recommended Monitoring Areas */}
+                      {aiIntel.recommended_monitoring_areas && (
+                        <motion.div
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.5, delay: 0.3 }}
+                          className="glass-light rounded-lg p-4 border border-[var(--cat-political)]/20 hover:border-[var(--cat-political)]/40 transition-colors"
+                        >
+                          <div className="flex items-center gap-2 mb-3">
+                            <Navigation className="w-3 h-3 text-[var(--cat-political)] animate-pulse" />
+                            <span className="text-[10px] uppercase tracking-[0.2em] font-mono text-[var(--cat-political)] font-semibold">Monitoring Areas</span>
+                          </div>
+                          <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.6, delay: 0.4 }}
+                          >
+                            {typeof aiIntel.recommended_monitoring_areas === 'string' ? (
+                              aiIntel.recommended_monitoring_areas.split('\n• ').map((item, idx) => (
+                                <motion.div
+                                  key={idx}
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ duration: 0.3, delay: 0.4 + idx * 0.1 }}
+                                  className="text-xs text-[var(--text-primary)] leading-relaxed mb-2 flex gap-2"
+                                >
+                                  <span className="text-[var(--cat-political)] font-mono">→</span>
+                                  <span>{item.trim()}</span>
+                                </motion.div>
+                              ))
+                            ) : (
+                              <p className="text-xs text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap">
+                                {String(aiIntel.recommended_monitoring_areas)}
+                              </p>
+                            )}
+                          </motion.div>
+                        </motion.div>
+                      )}
                     </motion.div>
                   ) : null}
 

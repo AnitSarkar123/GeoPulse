@@ -114,12 +114,30 @@ exports.queryLLMStructured = async (prompt, schema, options = {}) => {
 				content: response.choices?.[0]?.message?.content?.substring(0, 100),
 			});
 
-			const content = response.choices[0]?.message?.content || "{}";
+			const rawContent = response.choices[0]?.message?.content || "{}";
+			
+			// Clean markdown code blocks if present
+			let content = rawContent;
+			if (content.includes("```")) {
+				// Remove ```json or ``` wrappers
+				content = content.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+			}
+			
 			try {
 				return JSON.parse(content);
 			} catch (parseErr) {
 				logger.warn(`Failed to parse JSON response: ${parseErr.message}`, "llm");
-				return JSON.parse(content.match(/\{[\s\S]*\}/)?.[0] || "{}");
+				// Try to extract JSON object from the content
+				const jsonMatch = content.match(/\{[\s\S]*\}/);
+				if (jsonMatch) {
+					try {
+						return JSON.parse(jsonMatch[0]);
+					} catch (e) {
+						logger.warn(`Failed to parse extracted JSON: ${e.message}`, "llm");
+						return {};
+					}
+				}
+				return {};
 			}
 		} catch (jsonModeError) {
 			// If JSON mode not supported, retry without it
@@ -134,12 +152,30 @@ exports.queryLLMStructured = async (prompt, schema, options = {}) => {
 					// No response_format specified
 				});
 
-				const content = response.choices[0]?.message?.content || "{}";
+				const rawContent = response.choices[0]?.message?.content || "{}";
+				
+				// Clean markdown code blocks if present
+				let content = rawContent;
+				if (content.includes("```")) {
+					// Remove ```json or ``` wrappers
+					content = content.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+				}
+				
 				try {
 					return JSON.parse(content);
 				} catch (parseErr) {
 					logger.warn(`Failed to parse JSON response without JSON mode: ${parseErr.message}`, "llm");
-					return JSON.parse(content.match(/\{[\s\S]*\}/)?.[0] || "{}");
+					// Try to extract JSON object from the content
+					const jsonMatch = content.match(/\{[\s\S]*\}/);
+					if (jsonMatch) {
+						try {
+							return JSON.parse(jsonMatch[0]);
+						} catch (e) {
+							logger.warn(`Failed to parse extracted JSON: ${e.message}`, "llm");
+							return {};
+						}
+					}
+					return {};
 				}
 			} else {
 				throw jsonModeError;

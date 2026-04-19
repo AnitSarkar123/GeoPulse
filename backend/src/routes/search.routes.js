@@ -22,13 +22,18 @@ router.post("/", async (req, res) => {
 		logger.info(`Search endpoint called with query: "${query}"`, "search.routes");
 
 		const results = await searchNews(query);
+		
+		logger.info(`Search results: success=${results.success}, reason=${results.reason || 'N/A'}`, "search.routes");
+		logger.info(`Full response: ${JSON.stringify(results, null, 2)}`, "search.routes");
 
 		return res.status(results.success ? 200 : 400).json(results);
 	} catch (err) {
 		logger.error(`Search route error: ${err.message}`, "search.routes");
+		logger.error(`Error stack: ${err.stack}`, "search.routes");
 		return res.status(500).json({
 			success: false,
 			message: "Search failed",
+			reason: `Backend error: ${err.message}`,
 			error: err.message,
 		});
 	}
