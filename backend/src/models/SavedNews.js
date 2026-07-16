@@ -22,6 +22,16 @@ const SavedNewsSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    // Optional location data for geospatial queries
+    location: {
+      type: {
+        type: String,
+        enum: ['Point'], 
+      },
+      coordinates: {
+        type: [Number], 
+      }
+    }
   },
   {
     timestamps: false,
@@ -30,5 +40,8 @@ const SavedNewsSchema = new mongoose.Schema(
 
 // Prevent a user saving the same event twice
 SavedNewsSchema.index({ userId: 1, eventId: 1 }, { unique: true });
+
+// 2dsphere index to optimize MongoDB geospatial queries
+SavedNewsSchema.index({ location: "2dsphere" });
 
 module.exports = mongoose.model("SavedNews", SavedNewsSchema);
