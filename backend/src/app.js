@@ -20,8 +20,12 @@ const summarizeRoutes = require("./routes/summarize.routes");
 const financeRoutes   = require("./routes/finance.routes");
 const narrativeRoutes = require("./routes/narrative.routes");
 const perspectiveRoutes = require("./routes/perspective.routes");
+const setupSwagger = require('./config/swagger');
 
 const app = express();
+
+// Initialize Swagger docs
+setupSwagger(app);
 
 // ---------- DATABASE ----------
 connectDB();
