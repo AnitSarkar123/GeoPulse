@@ -41,11 +41,13 @@ const requireAuth = async (req, res, next) => {
   }
 };
 
-/**
- * generateToken — signs a JWT with 30-day expiry.
- */
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "30d" });
+  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "15m" });
 };
 
-module.exports = { requireAuth, generateToken };
+const generateRefreshToken = (userId) => {
+  const refreshSecret = process.env.JWT_REFRESH_SECRET || "fallback_refresh_secret_change_me";
+  return jwt.sign({ userId }, refreshSecret, { expiresIn: "7d" });
+};
+
+module.exports = { requireAuth, generateToken, generateRefreshToken };
