@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Brain, AlertTriangle, TrendingUp, Zap, Loader2, BarChart3 } from 'lucide-react';
+import { X, Brain, AlertTriangle, TrendingUp, Zap, Loader2, BarChart3, Download } from 'lucide-react';
 
 /**
  * GlobalIntelligenceAssistant — AI-Powered Global Intelligence Dashboard
@@ -55,6 +55,16 @@ export default function GlobalIntelligenceAssistant({ isOpen, onClose, events = 
   };
 
   const metrics = computeMetrics();
+
+  const handleExport = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(metrics, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "intelligence_report.json");
+    document.body.appendChild(downloadAnchorNode); // required for firefox
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  };
 
   const getStabilityColor = (value) => {
     if (value >= 75) return { color: '#22C55E', label: 'STABLE' };
@@ -126,13 +136,22 @@ export default function GlobalIntelligenceAssistant({ isOpen, onClose, events = 
                 <p className="text-xs text-[var(--text-muted)] mt-0.5">AI-powered geopolitical analysis</p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 glass-light rounded-md hover:bg-[var(--bg-elevated)]"
-              data-testid="intel-close-btn"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExport}
+                className="p-2 glass-light rounded-md hover:bg-[var(--bg-elevated)] flex items-center gap-2 text-xs font-mono text-[var(--text-secondary)]"
+                title="Export Intelligence Report (JSON)"
+              >
+                <Download className="w-4 h-4" /> Export JSON
+              </button>
+              <button
+                onClick={onClose}
+                className="p-2 glass-light rounded-md hover:bg-[var(--bg-elevated)]"
+                data-testid="intel-close-btn"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Tab Navigation */}
