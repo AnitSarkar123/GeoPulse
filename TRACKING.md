@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #26: refactor(frontend): create a centralized useWebSocket custom hook
