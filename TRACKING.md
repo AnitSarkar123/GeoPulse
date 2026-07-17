@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #16: fix(a11y): improve accessibility with ARIA labels
