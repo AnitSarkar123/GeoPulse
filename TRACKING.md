@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #19: feat(ui): create a responsive navigation drawer for mobile views
