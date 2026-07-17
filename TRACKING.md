@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #9: fix(backend): create a redis cache invalidation strategy for news updates
