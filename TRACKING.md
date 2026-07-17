@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #28: refactor(frontend): refactor frontend state management
