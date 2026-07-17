@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #25: feat(frontend): add multi-language support (i18n) for international users
