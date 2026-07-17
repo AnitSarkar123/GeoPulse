@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #13: perf(frontend): implement virtualized lists for the event feed
