@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #23: feat(pwa): add offline mode fallback using service workers
