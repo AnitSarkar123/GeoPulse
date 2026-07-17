@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #22: feat(frontend): implement user profile avatar upload
