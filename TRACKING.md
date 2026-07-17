@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #14: perf(frontend): optimize leaflet map rendering performance for large datasets
