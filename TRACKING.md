@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #30: feat(frontend): implement zod validation on the frontend
