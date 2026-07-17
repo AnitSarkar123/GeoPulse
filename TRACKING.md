@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #39: chore(devops): optimize docker image sizes with multi-stage builds
