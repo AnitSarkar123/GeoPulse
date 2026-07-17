@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #36: test: implement end-to-end (e2e) testing with cypress
