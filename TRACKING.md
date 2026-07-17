@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #11: chore(database): implement data retention policy and cleanup cron job
