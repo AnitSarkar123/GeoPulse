@@ -60,12 +60,42 @@ app.use(
 // ---------- ROUTES ----------
 
 // Health Check
-app.get("/api/health", (req, res) => {
-  res.json({
-    status: "ok",
-    message: "Server is running",
-    timestamp: new Date().toISOString()
-  });
+app.get("/api/health", async (req, res) => {
+  try {
+    const mongoose = require("mongoose");
+    const redis = require("./config/redis");
+    
+    let redisStatus = "disconnected";
+    if (redis.status === "ready") {
+      await redis.ping();
+      redisStatus = "connected";
+    } else if (redis.status) {
+      redisStatus = redis.status;
+    }
+
+    const mongoStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+
+    const isHealthy = redisStatus === "connected" && mongoStatus === "connected";
+    const httpStatus = isHealthy ? 200 : 503;
+
+    res.status(httpStatus).json({
+      status: isHealthy ? "ok" : "error",
+      message: "Server health status",
+      timestamp: new Date().toISOString(),
+      services: {
+        mongodb: mongoStatus,
+        redis: redisStatus
+      }
+    });
+  } catch (error) {
+    logger.error(`Health check error: ${error.message}`, "app");
+    res.status(503).json({
+      status: "error",
+      message: "Health check failed",
+      timestamp: new Date().toISOString(),
+      error: error.message
+    });
+  }
 });
 
 // Main API
