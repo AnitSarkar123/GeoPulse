@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #35: chore: standardize eslint and prettier configuration
