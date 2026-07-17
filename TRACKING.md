@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #27: fix(backend): implement websocket connection recovery mechanism
