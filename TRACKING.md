@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #34: chore: setup pre-commit hooks using husky and lint-staged
