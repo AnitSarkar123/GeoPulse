@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #21: feat(ui): enhance 3d globe visualization with interactive tooltips
