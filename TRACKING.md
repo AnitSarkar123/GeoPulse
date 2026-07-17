@@ -1,0 +1,1 @@
+- [x] Implementation started for Issue #24: feat(ui): implement filtering for events by date range
