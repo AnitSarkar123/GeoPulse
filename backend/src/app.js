@@ -117,24 +117,12 @@ app.get("/", (req, res) => {
   res.send("Geopolitical Intelligence Backend Running 🚀");
 });
 
-// ---------- 404 HANDLER ----------
-app.use((req, res) => {
-  logger.warn(`Route not found: ${req.originalUrl}`, "app");
+const { errorHandler, notFoundHandler } = require("./middleware/error.middleware");
 
-  res.status(404).json({
-    success: false,
-    error: "Route not found"
-  });
-});
+// ---------- 404 HANDLER ----------
+app.use(notFoundHandler);
 
 // ---------- GLOBAL ERROR HANDLER ----------
-app.use((err, req, res, next) => {
-  logger.error(`Unhandled error: ${err.message}`, "app");
-
-  res.status(500).json({
-    success: false,
-    error: "Internal Server Error"
-  });
-});
+app.use(errorHandler);
 
 module.exports = app;
