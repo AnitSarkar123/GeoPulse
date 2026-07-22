@@ -149,13 +149,20 @@ const categorizeEvents = (events) => {
 };
 
 // GET /api/geopolitics
-router.get("/geopolitics", async (req, res) => {
+router.get("/geopolitics", async (req, res, next) => {
 	const start = Date.now();
+	const page = parseInt(req.query.page) || 1;
+	const limit = parseInt(req.query.limit) || 500; // default to a reasonable limit
 
 	try {
-		logger.info("GET /api/geopolitics", "routes");
+		logger.info(`GET /api/geopolitics?page=${page}&limit=${limit}`, "routes");
 
-		const events = await getGeopoliticalEvents();
+		const allEvents = await getGeopoliticalEvents();
+		const total = allEvents.length;
+		
+		const skip = (page - 1) * limit;
+		const events = allEvents.slice(skip, skip + limit);
+
 		const data = categorizeEvents(events);
 
 		const duration = Date.now() - start;
@@ -168,15 +175,13 @@ router.get("/geopolitics", async (req, res) => {
 		res.status(200).json({
 			success: true,
 			count: events.length,
+			total,
+			page,
+			totalPages: Math.ceil(total / limit),
 			data,
 		});
 	} catch (err) {
-		logger.error(`Route error: ${err.message}`, "routes");
-
-		res.status(500).json({
-			success: false,
-			error: "Internal Server Error",
-		});
+		next(err);
 	}
 });
 
