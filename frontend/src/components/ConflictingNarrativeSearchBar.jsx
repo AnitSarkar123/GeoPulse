@@ -44,6 +44,23 @@ export default function ConflictingNarrativeSearchBar() {
     setIsExpanded(false);
   };
 
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setQuery(value);
+
+    // Clear previous debounce
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+
+    // Debounce and search automatically for longer queries
+    if (value.trim().length > 5) {
+      debounceTimer.current = setTimeout(() => {
+        handleSearch();
+      }, 1000);
+    }
+  };
+
   const handleKeyDown = (e) => {
     if (e.key === "Escape") {
       setIsExpanded(false);
@@ -75,7 +92,7 @@ export default function ConflictingNarrativeSearchBar() {
           <input
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder="Search for narrative conflicts..."
             className="flex-1 bg-transparent border-none outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] min-w-0"

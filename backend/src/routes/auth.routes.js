@@ -1,16 +1,39 @@
 const express = require("express");
 const router = express.Router();
 const passport = require("../config/passport");
-const { generateToken, requireAuth } = require("../middleware/auth.middleware");
+const jwt = require("jsonwebtoken");
+const { generateToken, generateRefreshToken, requireAuth } = require("../middleware/auth.middleware");
 const logger = require("../utils/logger");
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
-const COOKIE_OPTIONS = {
+
+const ACCESS_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+  maxAge: 15 * 60 * 1000, // 15 minutes
 };
+
+const REFRESH_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+};
+
+const rateLimit = require("express-rate-limit");
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // limit each IP to 20 requests per windowMs
+  message: {
+    success: false,
+    error: "Too many authentication requests, please try again after 15 minutes."
+  }
+});
+
+// Apply rate limiter to all auth routes
+router.use(authLimiter);
 
 // ── GET /api/auth/google ──────────────────────────────────────────
 // Initiates the Google OAuth flow
@@ -33,9 +56,11 @@ router.get(
   (req, res) => {
     try {
       const token = generateToken(req.user._id);
+      const refreshToken = generateRefreshToken(req.user._id);
 
-      // Set JWT in HttpOnly cookie
-      res.cookie("geopulse_token", token, COOKIE_OPTIONS);
+      // Set JWT in HttpOnly cookies
+      res.cookie("geopulse_token", token, ACCESS_COOKIE_OPTIONS);
+      res.cookie("geopulse_refresh_token", refreshToken, REFRESH_COOKIE_OPTIONS);
 
       logger.info(`User logged in: ${req.user.email}`, "auth");
 
@@ -48,6 +73,39 @@ router.get(
   }
 );
 
+// ── POST /api/auth/refresh ────────────────────────────────────────
+// Rotate access and refresh tokens
+router.post("/refresh", (req, res) => {
+  const refreshToken = req.cookies.geopulse_refresh_token;
+  if (!refreshToken) {
+    return res.status(401).json({ success: false, error: "Unauthorized — no refresh token" });
+  }
+
+  try {
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || "fallback_refresh_secret_change_me";
+    const payload = jwt.verify(refreshToken, refreshSecret);
+
+    // Rotate tokens
+    const newAccessToken = generateToken(payload.userId);
+    const newRefreshToken = generateRefreshToken(payload.userId);
+
+    // Set new cookies
+    res.cookie("geopulse_token", newAccessToken, ACCESS_COOKIE_OPTIONS);
+    res.cookie("geopulse_refresh_token", newRefreshToken, REFRESH_COOKIE_OPTIONS);
+
+    res.json({ success: true, message: "Tokens refreshed" });
+  } catch (err) {
+    logger.warn(`Refresh token error: ${err.message}`, "auth");
+    // Clear potentially compromised or expired refresh token
+    res.clearCookie("geopulse_refresh_token", {
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+    return res.status(401).json({ success: false, error: "Unauthorized — invalid refresh token" });
+  }
+});
+
 // ── GET /api/auth/me ──────────────────────────────────────────────
 // Returns the current signed-in user (protected)
 router.get("/me", requireAuth, (req, res) => {
@@ -59,13 +117,17 @@ router.get("/me", requireAuth, (req, res) => {
 });
 
 // ── POST /api/auth/logout ─────────────────────────────────────────
-// Clears the auth cookie
+// Clears the auth cookies
 router.post("/logout", (req, res) => {
-  res.clearCookie("geopulse_token", {
+  const clearOptions = {
     httpOnly: true,
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     secure: process.env.NODE_ENV === "production",
-  });
+  };
+  
+  res.clearCookie("geopulse_token", clearOptions);
+  res.clearCookie("geopulse_refresh_token", clearOptions);
+  
   res.json({ success: true, message: "Logged out" });
 });
 
